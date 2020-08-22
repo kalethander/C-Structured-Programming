@@ -1,76 +1,98 @@
 /*
-    Week 3 Peer Assignment
-    Kyle Lethander
-    Aug. 17, 2020
+I/O Assignment
+Kyle Lethander
+Aug. 19, 2020
 */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#define NAME_LEN_MAX 15
-#define SYM_LEN_MAX 3
+#define MAX_LEN 50
 
-typedef struct element{
-    char name[NAME_LEN_MAX];
-    char symbol[SYM_LEN_MAX]; 
-    double atomic_weight;
-    struct element *next;
-} element;
+typedef struct list_of_int {
+    int num_el;
+    int data[];
+} list_of_int;
 
-void print_elements( element* e)  // note elements printed "bottom to top"
+void print_file( FILE *fptr)
 {
-    while( e != NULL) {
-	printf("%-12s%-10s%-10.3lf\n", e -> name, e -> symbol, e -> atomic_weight);
-	e = e -> next;
-    }
+    int c;
+    rewind(fptr);
+    while((c = getc(fptr)) != EOF)
+	putc(c, stdout);
 }
 
-void print_header( char* title, char* h1, char* h2, char* h3)
+void print_output( int maximum, double average, FILE *ofp)
 {
-    printf("%-27s\n", title);
-    printf("%-12s%-10s%-10s\n", h1, h2, h3);
+    int c;
+    while((c = getc(stdout)) != EOF)
+	putc(c, ofp);
+} 
+
+void file_to_array( list_of_int* list, FILE *ifp)
+{
+    int c, element = 0, i = 0;
+
+    rewind(ifp);
+    list -> num_el = (getc(ifp) - '0');
+    list -> data[list -> num_el];
+    getc(ifp);    // removes the space
+
+    while((c = getc(ifp)) != EOF) {
+	if( c >= '0' && c <= '9') {
+	    element *= 10;
+	    element += ( c - '0');}
+        else {
+	    list -> data[i++] = element;
+	    element = 0;}
+    }	    
 }
 
-element* create_element( void)  // makes a new element
-{
-    element* el = (element*)malloc(sizeof(element));
-    printf("Enter name of element: ");
-    scanf("%s", el -> name);
-    printf("Enter element symbol: ");
-    scanf("%s", el -> symbol);
-    printf("Enter atomic weight: ");
-    scanf("%lf", &(el -> atomic_weight)); 
-    el -> next = NULL;
-    return el;
-}
-
-element* add_element( element* curr_list)  // adding a new element to the list
-{
-    element* head = create_element( );
-    head -> next = curr_list;
-    return head;
-}
-
-element* generate_list( element* el_list, int n)  // generating the element list
+double compute_average( list_of_int* list)
 {
     int i;
-    el_list = create_element( );
-    for (i = 1; i < n; i++)
-	el_list = add_element( el_list);
-    return el_list;
+    double sum = 0.0;
+    for( i = 0; i < (list -> num_el); i++) {
+	sum += (list -> data[i]);
+	printf("sum is %lf\n", sum); }
+    return (sum / (list -> num_el));
 }
 
-int main(void)
+int compute_max( list_of_int* list)
 {
-    int n;
-    printf("How many elements would you like to enter? ");
-    scanf("%d", &n);
-    element* el_list = (element*)malloc(sizeof(element));
-    el_list = generate_list( el_list, n);
+    int i = 1;
+    int* maximum;
+    while(i < (list -> num_el)) {
+	maximum = (list -> data[i - 1] > list -> data[i]) ? &(list->data[i-1]) : &(list->data[i]);
+	i++; }
+    return *maximum;
+}
 
-    print_header("List of the Elements", "Name", "Symbol", "Weight");
-    print_elements( el_list);
+int main(int argc, char* argv[])
+{
+    FILE *ifp, *ofp;
+
+    int maximum, num_el;
+    double average;
+    list_of_int* list = malloc(sizeof(list_of_int));
+
+    ifp = fopen(argv[1], "r+");
+    ofp = fopen(argv[2], "w+");
+    printf("The numbers from the file %s are \n", argv[1]);
+    print_file(ifp);
     printf("\n\n");
+
+    file_to_array(list, ifp);
+    maximum = compute_max( list);
+    average = compute_average( list);
+
+    printf("The average of these integers is %lf\n", average);
+    printf("The maximum of these integers is %d\n", maximum);
+    print_output(maximum, average, ofp);
+    printf("\n\n");
+    fclose(ifp);
+    fclose(ofp);
 
     return 0;
 }
