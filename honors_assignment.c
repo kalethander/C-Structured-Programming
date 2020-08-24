@@ -1,78 +1,186 @@
 /*
-Deck of cards
-Kyle Lethander
-Aug. 14, 2020
+    Week 3 Peer Assignment
+    Kyle Lethander
+    Aug. 17, 2020
 */
-
-// struct defines card with a suit and a pips
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
-#define NUM_CARDS 52
-#define EMPTY_STACK -1
+#define NUM_RANGE 50
+#define RANDOM_NUM (rand() % NUM_RANGE)
 
-typedef enum suits {diamonds, hearts, clubs, spades} suit;
-typedef enum pips {ace, two, three, four, five, six, seven, eight, nine, ten, jack, queen, king} pips;
+typedef struct int_list{
+    int d;
+    struct int_list *prev;
+    struct int_list *next;
+} int_list;
 
-typedef struct card{
-    suit suit;
-    pips pips;
-} card;
 
-typedef struct stack {
-    card deck[NUM_CARDS];
-    int top;
-} stack;
-
-void print_suit( card card)
+int_list* to_front( int_list* list)
 {
-    switch (card.suit) {
-	case(1): printf(" of diamonds"); break;
-	case(2): printf(" of hearts"); break;
-	case(3): printf(" of clubs"); break;
-	case(4): printf(" of spades"); break;
-	default: printf("Invalid suit"); break;
+    while( list -> prev != NULL)
+	list = list -> prev;
+    return list;
+}
+
+int_list* to_back( int_list* list)
+{
+    while( list -> next != NULL)
+	list = list -> next;
+    return list;
+}
+
+void print_forward( int_list* list)
+{
+    int i = 0;
+    list = to_front( list);
+    while(list != NULL) {
+	printf("Element %d is %d\n", i++, list -> d);
+	list = list -> next;
     }
 }
 
-void print_pips( card card)
+int_list* rm_node( int_list* node)
 {
-    switch (card.pips) {
-	case(1): printf("Ace"); break;
-	case(2): printf("two"); break;
-	case(3): printf("three"); break;
-	case(4): printf("four"); break;
-	case(5): printf("five"); break;
-	case(6): printf("six"); break;
-	case(7): printf("seven"); break;
-	case(8): printf("eight"); break;
-	case(9): printf("nine"); break;
-	case(10): printf("ten"); break;
-	case(11): printf("jack"); break;
-	case(12): printf("queen"); break;
-	case(13): printf("king"); break;
-	default: printf("Invalid pips"); break;
+    int_list* p1 = node -> prev;
+    int_list* p2 = node -> next;
+    if (p1 == NULL) { p2 -> prev = NULL;}
+    else if (p2 == NULL) { p1 -> next = NULL;}
+    else {
+	p1 -> next = p2;
+	p2 -> prev = p1;
     }
+    free(node);
+    return p2;
 }
 
-void deck_shuffle( stack* deck)
+int_list* access_element( int_list* list, int n)
 {
-    deck -> top = EMPTY_STACK;
-    for( int i = 0; i < NUM_CARDS; i++) {
-	deck -> top++;
-	deck -> deck[deck -> top].suit = rand() % 4;
-	deck -> deck[deck -> top].pips = rand() % 13;
+    list = to_front( list);
+    for( int i = 0; i < (n - 1); i++)
+	list = list -> next;
+    return list;
+}
+
+int_list* rm_duplicates( int_list* list, int n)
+{
+    for( int i = 1; i < n; i++) 
+    {
+	for( int j = i + 1; j < n; j++)
+	{
+	    if( access_element( list, i)->d == access_element( list, j)->d) {
+		list = rm_node(access_element( list, j)); n--;}
+	}
     }
+    return list;
+}
+
+int_list* create_node( int data)
+{
+    int_list* node = malloc(sizeof(int_list));
+    node -> d = data;
+    node -> prev = NULL;
+    node -> next = NULL;
+    return node;
+}
+
+int_list* add_to_front( int data, int_list* list)
+{
+    int_list* new_node = create_node( data);
+    list = to_front( list);
+    list -> prev = new_node;
+    new_node -> next = list;
+    return new_node;
+}
+
+int_list* generate_list( int n)
+{
+    int i;
+    srand(clock());
+    int_list* list = create_node( RANDOM_NUM);    // create first element
+
+    while( i < n) {list = add_to_front( RANDOM_NUM, list); i++;}
+    
+    return list;
 }
 
 int main(void)
 {
-    stack* deck = (stack*)malloc(sizeof(stack));
-    deck_shuffle( deck);
-    printf("The top card is the ");
-    print_pips( deck -> deck[deck -> top]);
-    print_suit( deck -> deck[deck -> top]);
+    int n = 200;
+    int_list* list = generate_list( n);
+    printf("\nOriginal list: \n");
+    print_forward( list);
 
+    list = rm_duplicates( list, n);
+    printf("\nMutated list: \n");
+    print_forward( list); 
     return 0;
 }
+
+
+
+
+
+/*
+
+
+int_list* rm_duplicates( int_list* list)
+{
+    int* data;
+    int j = 0;
+    list = to_front( list);
+    while( list -> next != NULL) {
+	j++;
+	data = &(list -> d);
+	list = list -> next;
+	while( list -> next != NULL) {
+	    if( list -> d == *data)
+		list = rm_node( list);
+	    list = list -> next;    
+	}
+	list = to_front( list);
+	for( int i = 0; i < j; i++)
+	    list = list -> next;
+    }
+    list = to_front(list);
+    return list;
+}
+
+
+*/
+
+
+
+
+/*
+list = to_back(list);
+    if( (list -> prev) -> d == list -> d)
+	list = rm_node( list);
+ */
+
+
+
+
+
+/* int_list* add_to_back( int data, int_list* list)
+{
+    int_list* new_node = create_node( data);
+    list = to_back( list);
+    list -> next = new_node;
+    new_node -> prev = list;
+    list = to_front(new_node);
+    return list;
+} */
+
+/*  
+void print_backward(int_list* list)
+{
+    int i = 0;
+    list = to_back( list);
+    while(list != NULL) {
+	printf("Element %d is %d\n", i++, list -> d);
+	list = list -> prev;
+    }
+} */
