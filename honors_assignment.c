@@ -1,123 +1,105 @@
 /*
-    Week 3 Peer Assignment
-    Kyle Lethander
-    Aug. 17, 2020
+I/O Assignment
+Kyle Lethander
+Aug. 19, 2020
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <string.h>
 
-#define NUM_RANGE 50
-#define RANDOM_NUM (rand() % NUM_RANGE)
+#define MAX_LEN 50
 
-typedef struct int_list{
+typedef struct list_of_int {
+    int num_el;
+    int data[];
+} list_of_int;
+
+typedef struct node {
     int d;
-    struct int_list *prev;
-    struct int_list *next;
-} int_list;
+    struct node* left;
+    struct node* right;
+} NODE;
 
+typedef NODE	*BTREE;
 
-int_list* to_front( int_list* list)	// direct to list head
+void print_file( FILE *fptr)
 {
-    while( list -> prev != NULL)
-	list = list -> prev;
-    return list;
+    int c;
+    rewind(fptr);
+    while((c = getc(fptr)) != EOF)
+	putc(c, stdout);
 }
 
-int_list* to_back( int_list* list)	// direct to list tail
+void file_to_array( list_of_int* list, FILE *ifp)
 {
-    while( list -> next != NULL)
-	list = list -> next;
-    return list;
+    int c, element = 0, i = 0;
+
+    rewind(ifp);
+    list -> num_el = (getc(ifp) - '0');
+    list -> data[list -> num_el];
+    getc(ifp);    // removes the space
+
+    while((c = getc(ifp)) != EOF) {
+	if( c >= '0' && c <= '9') {
+	    element *= 10;
+	    element += ( c - '0');}
+        else {
+	    list -> data[i++] = element;
+	    element = 0;}
+    }	    
 }
 
-void print_forward( int_list* list)	// print list in order
+void inorder(BTREE node)
 {
-    int i = 0;
-    list = to_front( list);
-    while(list != NULL) {
-	printf("Element %d is %d\n", i++, list -> d);
-	list = list -> next;
-    }
-}
-
-int_list* rm_node( int_list* node)	// remove a node
-{
-    int_list* p1 = node -> prev;
-    int_list* p2 = node -> next;
-    if (p1 == NULL) { p2 -> prev = NULL; return p2;}
-    else if (p2 == NULL) { p1 -> next = NULL; return p1;}
-    else {
-	p1 -> next = p2;
-	p2 -> prev = p1;
-	free(node);
-	return p2;
-    }
-}
-
-int_list* access_element( int_list* list, int n)	// access element n
-{
-    list = to_front( list);
-    for( int i = 0; i < (n - 1); i++)
-	list = list -> next;
-    return list;
-}
-
-int_list* rm_duplicates( int_list* list, int n)		// remove integer duplicates
-{
-    for( int i = 1; i < n; i++) 
+    if(node != NULL)
     {
-	for( int j = i + 1; j <= n; j++)
-	{
-	    if( access_element( list, i)->d == access_element( list, j)->d) {
-		list = rm_node(access_element( list, j)); 
-		n--;
-	    }
-	}
+	inorder(node -> left);
+	printf("%d ", node -> d);
+	inorder(node -> right);
     }
-    return list;
 }
 
-int_list* create_node( int data)	// creates new node instance
-{
-    int_list* node = malloc(sizeof(int_list));
-    node -> d = data;
-    node -> prev = NULL;
-    node -> next = NULL;
-    return node;
-}
+BTREE gen_node( void) { return(malloc(sizeof(NODE))); }
 
-int_list* add_to_front( int data, int_list* list)	// append node to front of list
+BTREE init_node( int data, BTREE p1, BTREE p2)
 {
-    int_list* new_node = create_node( data);
-    list = to_front( list);
-    list -> prev = new_node;
-    new_node -> next = list;
+    BTREE new_node = gen_node();
+    new_node -> d = data;
+    new_node -> left = p1;
+    new_node -> right = p2;
     return new_node;
 }
 
-int_list* generate_list( int n)		// generates a list of nodes
+BTREE build_tree( list_of_int* list, int i)
 {
-    int i;
-    srand(clock());
-    int_list* list = create_node( RANDOM_NUM);    // create first element
-
-    while( i < n) {list = add_to_front( RANDOM_NUM, list); i++;}
-    
-    return list;
+    int size = list -> num_el;
+    if( i >= size)
+	return NULL;
+    else
+	return( init_node(list -> data[i],
+			build_tree(list, 2*i + 1),
+			build_tree(list, 2*i + 2)));
 }
 
-int main(void)
+int main(int argc, char* argv[])
 {
-    int n = 200;
-    int_list* list = generate_list( n);
-    printf("\nOriginal list: \n");
-    print_forward( list);
+    FILE *ifp;
 
-    list = rm_duplicates( list, n);
-    printf("\nMutated list: \n");
-    print_forward( list); 
+    list_of_int* list = malloc(sizeof(list_of_int));
+    BTREE tree;
+
+    ifp = fopen(argv[1], "r+");
+    printf("The numbers from the file %s are \n", argv[1]);
+    print_file(ifp);
+    printf("\n\n");
+
+    file_to_array(list, ifp);
+    tree = build_tree( list, 0);
+    printf("Binary tree representation: \n");
+    inorder(tree);
+    printf("\n\n");    
+    fclose(ifp);
 
     return 0;
 }
